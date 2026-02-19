@@ -10,4 +10,6 @@ La roadmap du projet Flipper s’étale sur 10 semaines en trois blocs.
 
 ---
 
-Le diagramme est dans `roadmap.puml`. Tu peux le visualiser sur [plantuml.com](https://www.plantuml.com/plantuml/uml/) en copiant le contenu du fichier.
+## Diagramme
+
+![Roadmap - Projet Flipper Virtuel](roadmap.png)
