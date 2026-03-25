@@ -38,20 +38,37 @@ Critères de succès :
 - aucune erreur build
 - (optionnel) tests / lint OK
 
+Étapes Terraform (toujours exécutées dans CI) :
+1. `terraform fmt -check`
+2. `terraform init`
+3. `terraform validate`
+4. `terraform plan` (plan non appliqué)
+
 ## 6. Pipeline CD (choix selon votre infra)
-Option A (recommandée si pas d’hébergement public) :
+Option A (recommandée en l’absence d’hébergement public) :
 - à chaque merge `main`, faire la même étape que CI
 - puis “déployer” au sens packaging / artefacts :
   - upload dist/artefacts
   - ou publier un zip de build
-  - ou lancer une exécution sur un environnement de démo si une VM est disponible
+  - ou lancer une exécution sur un environnement de démo sur une VM disponible
 
-Option B (déploiement réel via SSH, si une VM existe) :
+Option B (déploiement réel via SSH, sur une VM configurée) :
 - à chaque merge `main` :
   - build
   - copie des builds sur une machine (scp/rsync)
   - redémarrage du serveur Node
   - vérification que le serveur tourne (health check)
+
+Étapes Terraform (toujours exécutées dans CD) :
+1. `terraform init`
+2. `terraform plan`
+3. `terraform apply`
+4. Déploiement applicatif ensuite (build + copie/upload selon l’option A ou B)
+
+Contraintes et points d’attention Terraform
+- Ne jamais exécuter `terraform apply` sur les PR.
+- Stocker les secrets Terraform dans GitHub Secrets.
+- Utiliser un backend de state Terraform configuré avec locking pour éviter les collisions entre runs.
 
 ## 7. Commandes attendues (à normaliser dans package.json)
 Exemples de scripts à rendre disponibles :
@@ -65,5 +82,7 @@ Exemples de scripts à rendre disponibles :
 ## 9. Checklist de mise en place
 - [ ] Créer `.github/workflows/ci.yml`
 - [ ] Créer `.github/workflows/cd.yml` (ou une variante “CD = upload artefacts”)
+- [ ] Ajouter les étapes Terraform (`fmt`, `init`, `validate`, `plan`) dans CI
+- [ ] Ajouter les étapes Terraform (`init`, `plan`, `apply`) dans CD
 - [ ] Fixer la version de Node (ex: via action + `.nvmrc` optionnel)
 - [ ] S’assurer que les scripts `build` existent partout où nécessaire
