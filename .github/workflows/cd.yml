@@ -5,7 +5,41 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-and-upload:
+  validate-all:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dir: server
+            command: "node --check src/index.js"
+          - dir: playfield
+            command: "npm run build"
+          - dir: backglass
+            command: "npm run build"
+          - dir: dmd
+            command: "npm run build"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.dir }}
+        run: npm ci
+
+      - name: Run checks / build
+        working-directory: ${{ matrix.dir }}
+        run: ${{ matrix.command }}
+
+  upload-front-artifacts:
+    needs: validate-all
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -20,10 +54,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -37,7 +71,7 @@ jobs:
         run: npm run build
 
       - name: Upload dist artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.dir }}-dist
           path: ${{ matrix.dir }}/${{ matrix.dist }}
