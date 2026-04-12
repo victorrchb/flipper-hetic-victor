@@ -18,7 +18,9 @@ import {
   FIXED_TIME_STEP,
   MAX_SUB_STEPS,
 } from "./physics.js";
-import { createBall } from "./ball.js";
+import { createBall, launchBall, resetBall } from "./ball.js";
+import { initNetwork, emitStartGame, emitLaunchBall, emitFlipperLeftDown, emitFlipperLeftUp, emitFlipperRightDown, emitFlipperRightUp, gameState } from "./network.js";
+import { createFlippers, setFlipperActive, updateFlippers } from "./flippers.js";
 
 // ── Scene ──────────────────────────────────────────────
 const scene = new THREE.Scene();
@@ -142,6 +144,63 @@ createWall(
 const ball = createBall(scene, world);
 syncPairs.push(ball);
 
+// ── Flippers ──────────────────────────────────────────
+const flippers = createFlippers(scene, world);
+syncPairs.push(flippers.left, flippers.right);
+
+// ── Reseau Socket.io ──────────────────────────────────
+const socket = initNetwork({
+  onGameStarted() {
+    resetBall(ball);
+    console.log("[main] game started — bille au spawn");
+  },
+  onGameOver(data) {
+    console.log("[main] game over — score final :", data.score);
+  },
+});
+
+// ── Clavier : plunger (Espace), start (S), flippers (fleches), debug (R) ──
+window.addEventListener("keydown", (e) => {
+  if (e.repeat) return;
+
+  if (e.code === "Space") {
+    e.preventDefault();
+    if (gameState.status === "playing" && launchBall(ball)) {
+      emitLaunchBall(socket);
+    }
+  }
+
+  if (e.code === "KeyS") {
+    emitStartGame(socket);
+  }
+
+  if (e.code === "ArrowLeft") {
+    e.preventDefault();
+    setFlipperActive(flippers, "left", true);
+    emitFlipperLeftDown(socket);
+  }
+  if (e.code === "ArrowRight") {
+    e.preventDefault();
+    setFlipperActive(flippers, "right", true);
+    emitFlipperRightDown(socket);
+  }
+
+  if (e.code === "KeyR") {
+    resetBall(ball);
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  if (e.code === "ArrowLeft") {
+    setFlipperActive(flippers, "left", false);
+    emitFlipperLeftUp(socket);
+  }
+  if (e.code === "ArrowRight") {
+    setFlipperActive(flippers, "right", false);
+    emitFlipperRightUp(socket);
+  }
+});
+
 // ── Resize ─────────────────────────────────────────────
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -159,6 +218,7 @@ function animate() {
   const delta = Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
 
+  updateFlippers(flippers, delta);
   world.step(FIXED_TIME_STEP, delta, MAX_SUB_STEPS);
   syncMeshesWithBodies(syncPairs);
 
