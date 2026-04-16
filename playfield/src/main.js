@@ -18,9 +18,13 @@ import {
   FIXED_TIME_STEP,
   MAX_SUB_STEPS,
 } from "./physics.js";
-import { createBall, launchBall, resetBall } from "./ball.js";
+import { createBall, launchBall, resetBall, clampBall } from "./ball.js";
 import { initNetwork, emitStartGame, emitLaunchBall, emitFlipperLeftDown, emitFlipperLeftUp, emitFlipperRightDown, emitFlipperRightUp, gameState } from "./network.js";
-import { createFlippers, setFlipperActive, updateFlippers } from "./flippers.js";
+import { createFlippers, setFlipperActive, updateFlippers, postStepFlippers } from "./flippers.js";
+import { createBumpers } from "./bumpers.js";
+import { createSlingshots } from "./slingshots.js";
+import { setupCollisionListeners, checkDrain, resetDrainFlag, resetCollisionCooldowns } from "./collisions.js";
+import { createGameInputController, bindKeyboardInput } from "./input.js";
 
 // ── Scene ──────────────────────────────────────────────
 const scene = new THREE.Scene();
@@ -76,6 +80,8 @@ const tableBody = createStaticBoxBody(world, {
   height: TABLE_THICKNESS,
   depth: TABLE_DEPTH,
   position: table.position,
+  material: "table",
+  type: "table",
 });
 syncPairs.push({ mesh: table, body: tableBody });
 
@@ -148,10 +154,21 @@ syncPairs.push(ball);
 const flippers = createFlippers(scene, world);
 syncPairs.push(flippers.left, flippers.right);
 
+// ── Slingshots ────────────────────────────────────────
+syncPairs.push(...createSlingshots(scene, world));
+
+// ── Bumpers ─────────────────────────────────────────
+syncPairs.push(...createBumpers(scene, world));
+
 // ── Reseau Socket.io ──────────────────────────────────
 const socket = initNetwork({
   onGameStarted() {
     resetBall(ball);
+    resetDrainFlag();
+    resetCollisionCooldowns();
+    // Remettre les flippers au repos au demarrage d'une nouvelle partie.
+    setFlipperActive(flippers, "left", false);
+    setFlipperActive(flippers, "right", false);
     console.log("[main] game started — bille au spawn");
   },
   onGameOver(data) {
@@ -159,47 +176,41 @@ const socket = initNetwork({
   },
 });
 
-// ── Clavier : plunger (Espace), start (S), flippers (fleches), debug (R) ──
-window.addEventListener("keydown", (e) => {
-  if (e.repeat) return;
+// ── Collisions ────────────────────────────────────────
+setupCollisionListeners(socket, ball.body);
 
-  if (e.code === "Space") {
-    e.preventDefault();
+// ── Input (clavier / futurs peripheriques) ────────────
+const inputController = createGameInputController({
+  onStart() {
+    emitStartGame(socket);
+  },
+  onLaunch() {
     if (gameState.status === "playing" && launchBall(ball)) {
       emitLaunchBall(socket);
     }
-  }
-
-  if (e.code === "KeyS") {
-    emitStartGame(socket);
-  }
-
-  if (e.code === "ArrowLeft") {
-    e.preventDefault();
+  },
+  onLeftFlipperDown() {
     setFlipperActive(flippers, "left", true);
     emitFlipperLeftDown(socket);
-  }
-  if (e.code === "ArrowRight") {
-    e.preventDefault();
-    setFlipperActive(flippers, "right", true);
-    emitFlipperRightDown(socket);
-  }
-
-  if (e.code === "KeyR") {
-    resetBall(ball);
-  }
-});
-
-window.addEventListener("keyup", (e) => {
-  if (e.code === "ArrowLeft") {
+  },
+  onLeftFlipperUp() {
     setFlipperActive(flippers, "left", false);
     emitFlipperLeftUp(socket);
-  }
-  if (e.code === "ArrowRight") {
+  },
+  onRightFlipperDown() {
+    setFlipperActive(flippers, "right", true);
+    emitFlipperRightDown(socket);
+  },
+  onRightFlipperUp() {
     setFlipperActive(flippers, "right", false);
     emitFlipperRightUp(socket);
-  }
+  },
+  onDebugResetBall() {
+    resetBall(ball);
+  },
 });
+
+bindKeyboardInput(inputController);
 
 // ── Resize ─────────────────────────────────────────────
 window.addEventListener("resize", () => {
@@ -218,8 +229,17 @@ function animate() {
   const delta = Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
 
-  updateFlippers(flippers, delta);
+  updateFlippers(flippers);
   world.step(FIXED_TIME_STEP, delta, MAX_SUB_STEPS);
+  postStepFlippers(flippers);
+  clampBall(ball);
+
+  // Verifier si la bille est dans le drain apres le step physique.
+  if (checkDrain(socket, ball.body, gameState.status)) {
+    resetBall(ball);
+    resetDrainFlag();
+  }
+
   syncMeshesWithBodies(syncPairs);
 
   renderer.render(scene, camera);
