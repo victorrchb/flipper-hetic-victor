@@ -50,18 +50,35 @@ Connecte le monde exterieur au metier :
 ### Infrastructure / Framework
 Librairies et details techniques :
 - Three.js,
-- Cannon-es,
+- moteur physique (Cannon-es / Rapier, swappable derriere `physics/index.js`),
 - Socket.io,
 - Vite.
 
 ## 3) Mapping concret pour ce repo
 
-- `playfield/src/main.js` : composition + orchestration (le plus mince possible)
-- `playfield/src/input.js` : adapter d'entree (clavier aujourd'hui, IoT plus tard)
-- `playfield/src/network.js` : adapter Socket
-- `playfield/src/physics.js`, `ball.js`, `flippers.js`, `bumpers.js` : infrastructure/technique de simulation
-- `server/src/events.js` : logique serveur et contrat d'evenements (a garder coherent avec la doc)
-- `docs/EVENTS.md` : contrat partage (source de reference equipe)
+### Playfield
+- `playfield/src/main.js` : composition root + orchestration (le plus mince possible)
+- `playfield/src/domain/` : constantes du plateau, regles pures
+- `playfield/src/usecases/` : `collisionHandler.js` (use case pur)
+- `playfield/src/adapters/input.js` : adapter d'entree (clavier aujourd'hui, IoT plus tard)
+- `playfield/src/adapters/network.js` : adapter Socket
+- `playfield/src/adapters/renderer/` : Three.js (rendu 3D)
+- `playfield/src/adapters/physics/` : moteur physique (Cannon-es / Rapier via port)
+  - `ports/PhysicsPort.js` : contrat du moteur
+  - `cannon/` : backend Cannon-es (default)
+  - `rapier/` : backend Rapier (scaffold pret, voir `rapier/MIGRATION.md`)
+  - `index.js` : barrel selectionnant le backend actif
+- `playfield/src/adapters/actuators.js` : effets sortants (haptique, sons)
+
+### Server
+- `server/src/index.js` : composition root HTTP + Socket.IO
+- `server/src/domain/GameState.js`, `scoring.js` : entites pures (zero dependance framework)
+- `server/src/usecases/` : `startGame`, `loseBall`, `applyCollision`
+- `server/src/adapters/socketHandlers.js` : transport Socket.IO uniquement
+
+### Contrat partage
+- `shared/src/eventNames.js` : source de verite des noms d'evenements
+- `docs/specs/EVENTS.md` : contrat documentaire (alignee sur eventNames.js)
 
 ## 4) Regles de dev pour l'equipe
 
