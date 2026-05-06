@@ -9,7 +9,7 @@ Vue d'ensemble des composants du système, des technologies et des flux de commu
 | Composant   | Technologie      | Rôle |
 |------------|------------------|------|
 | **Server** | Node.js + WebSocket | Source de vérité : état du jeu (score, balles, gameOver). Connexion des clients, broadcast de l'état à tous les écrans. |
-| **Playfield** | Three.js + Cannon-es | Écran principal 3D : scène du flipper, physique (gravité, collisions), bille, battes. Reçoit l'état et envoie les inputs (plunger, batteur gauche/droit). |
+| **Playfield** | Three.js + Cannon-es (ou Rapier via port) | Écran principal 3D : scène du flipper, physique (gravité, collisions), bille, battes. Reçoit l'état et envoie les inputs (plunger, batteur gauche/droit). Le moteur physique est swappable via `adapters/physics/index.js`. |
 | **Backglass** | (Frontend) | Écran arrière : ambiance, score, nombre de balles, meilleur score. Affichage piloté par l'état reçu du serveur. |
 | **DMD** | (Frontend) | Affichage type dot-matrix : messages courts (PRESS START, SCORE, BALL 2, GAME OVER). Piloté par l'état serveur. |
 | **ESP32** (optionnel) | WiFi / WebSocket | Lecture des boutons physiques (battes, plunger) et envoi des événements au serveur. |
@@ -54,7 +54,7 @@ Vue d'ensemble des composants du système, des technologies et des flux de commu
 |----------------|-------------------|
 | État du jeu (score, balles, gameOver) | Server |
 | Règles de fin de partie, décrément des balles | Server |
-| Physique (gravité, collisions, rebonds) | Playfield (Cannon-es) |
+| Physique (gravité, collisions, rebonds) | Playfield (Cannon-es / Rapier — port `adapters/physics/`) |
 | Rendu 3D (map, bille, battes, murs) | Playfield (Three.js) |
 | Affichage score / balles / ambiance | Backglass |
 | Affichage messages courts | DMD |

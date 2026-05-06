@@ -81,3 +81,34 @@ Les frontends ne démarrent qu’après le serveur **healthy** (vérification HT
 
 Une fois les 4 services démarrés, ouvrir les 4 URLs dans des onglets séparés.  
 Le flux complet `start_game → collision → ball_lost → game_over` doit fonctionner sans régression.
+
+## Tests
+
+```bash
+# Tous les workspaces (server + playfield)
+npm run test:all
+
+# Un workspace specifique
+npm test --workspace=server
+npm test --workspace=playfield
+```
+
+## Moteur physique (Cannon-es / Rapier)
+
+Le moteur physique est isolé derrière un port `playfield/src/adapters/physics/ports/PhysicsPort.js`.
+
+- **Backend par défaut** : Cannon-es (stable, MVP validé).
+- **Backend alternatif** : Rapier (WASM, plus rapide, scaffold prêt).
+
+Le switch se fait dans `playfield/src/adapters/physics/index.js`. Voir
+`playfield/src/adapters/physics/rapier/MIGRATION.md` pour les étapes d'activation
+(install dépendance, init async, validation gameplay).
+
+## Architecture
+
+Voir `docs/specs/cdc-technique/clean-architecture.md` et
+`docs/architecture/architecture.md` pour le détail des couches
+domaine / use-cases / adapters / infrastructure.
+
+Contrat Socket : `shared/src/eventNames.js` (source de vérité) +
+`docs/specs/EVENTS.md` (référence documentaire).
