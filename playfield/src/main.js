@@ -23,6 +23,7 @@ import { createSlingshotMeshes } from "./adapters/renderer/slingshotMesh.js";
 // Physics — passe par le barrel pour permettre le swap de moteur (Cannon/Rapier).
 // Cf. adapters/physics/ports/PhysicsPort.js et adapters/physics/index.js.
 import {
+  initRapier,
   createPhysicsWorld,
   createStaticBoxBody,
   syncMeshesWithBodies,
@@ -34,6 +35,9 @@ import {
   createSlingshotBodies,
   attachCollisionListener,
 } from "./adapters/physics/index.js";
+
+// Rapier est livre en WASM : initialisation async obligatoire avant tout createPhysicsWorld.
+await initRapier();
 
 // Network
 import {
@@ -171,7 +175,7 @@ const socket = initNetwork({
   },
 });
 
-// ── Collisions (use case pur + adapter Cannon-es) ─────
+// ── Collisions (use case pur + adapter physique) ─────
 const collisionHandler = createCollisionHandler({
   onCollision: (type) => {
     emitCollision(socket, type);
@@ -181,6 +185,9 @@ const collisionHandler = createCollisionHandler({
   onBallLost: () => {
     emitBallLost(socket);
     actuators.onBallLost();
+  },
+  onBumperImpulse: (vec3) => {
+    ballBody.applyImpulse(vec3);
   },
 });
 attachCollisionListener(ballBody, collisionHandler);

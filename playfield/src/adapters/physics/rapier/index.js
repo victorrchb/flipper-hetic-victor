@@ -23,7 +23,6 @@ export {
 } from "./world.js";
 
 export {
-  BALL_RADIUS,
   createBallBody,
   resetBallBody,
   launchBallBody,

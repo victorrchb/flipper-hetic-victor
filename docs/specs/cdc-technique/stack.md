@@ -3,7 +3,7 @@
 | Couche        | Technologie        | Rôle principal                                   | Justification |
 |--------------|-------------------|--------------------------------------------------|---------------|
 | Frontend 3D  | Three.js          | Affichage du flipper en 3D dans le navigateur    | Web-native, compatible navigateurs, large documentation |
-| Physique     | Cannon-es         | Gestion des collisions, gravité, rebonds         | Compatible Three.js, simple |
+| Physique     | Rapier (`@dimforge/rapier3d-compat`) | Gestion des collisions, gravité, rebonds | Moteur Rust/WASM moderne, performant, EventQueue de collisions, swap derrière `adapters/physics/` (Cannon-es retiré) |
 | Backend      | Node.js           | Gestion de l'état du jeu et synchronisation     | Même langage (JS), adapté au temps réel |
 | Communication| WebSocket (Socket.io) | Synchronisation temps réel multi-écran       | Connexion persistante, reconnexion auto, broadcast natif |
 | Hardware     | ESP32             | Lecture boutons physiques                        | WiFi intégré, simple à programmer |
@@ -11,5 +11,6 @@
 
 ## Alternatives écartées
 
-- **Ammo.js** (physique) : plus lourd (~1,5 MB) ; Cannon.js / Cannon-es retenu pour un bundle plus léger (~200 KB) et une intégration Three.js simple.
+- **Cannon-es** (physique, backend initial) : utilisé jusqu'à la migration Rapier. Retiré une fois Rapier validé pour profiter d'un solver plus moderne, des `EventQueue` natifs et du support CCD potentiel. Le port `adapters/physics/ports/PhysicsPort.js` permet de revenir à Cannon-es si besoin.
+- **Ammo.js** (physique) : plus lourd (~1,5 MB) ; Rapier retenu pour son API moderne et son ecosystème Rust/WASM.
 - **WebSocket natif (ws)** : Socket.io retenu pour la reconnexion automatique et le broadcast côté serveur sans logique supplémentaire.

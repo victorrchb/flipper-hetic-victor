@@ -1,10 +1,15 @@
 /**
- * Rapier — Monde + bodies statiques + sync mesh/body.
+ * Rapier — Monde + bodies statiques + sync mesh/body + bus collision.
  *
  * Equivalents Cannon-es :
  *   - createPhysicsWorld()       -> RAPIER.World avec gravite inclinee
  *   - createStaticBoxBody()      -> RigidBodyDesc.fixed() + ColliderDesc.cuboid()
- *   - syncMeshesWithBodies()     -> idem (lit handle.position / handle.quaternion)
+ *   - syncMeshesWithBodies()     -> idem (lit body.rb.translation/rotation)
+ *
+ * Specifique Rapier :
+ *   - world.step() draine l'EventQueue et notifie les listeners enregistres
+ *     via world.addCollisionListener(cb). Un seul wrap, pas de monkey-patch
+ *     en cascade depuis collisionListener.js.
  *
  * Cf. ports/PhysicsPort.js pour le contrat.
  */
@@ -19,8 +24,8 @@ export const MAX_SUB_STEPS = 10; // Rapier n'a pas de substeps natifs ; on garde
 
 /**
  * Materiaux : Rapier n'a pas de "Material" objet partage. Friction/restitution
- * sont definies par Collider. On garde des marqueurs symboliques pour respecter
- * l'API Cannon, et chaque factory de body applique les bons coefficients.
+ * sont definies par Collider. On centralise les coefficients ici, chaque body
+ * lit `MATERIALS.<name>.friction` / `.restitution` pour rester coherent.
  */
 export const MATERIALS = {
   ball: { name: "ball", friction: 0.3, restitution: 0.35 },
@@ -41,13 +46,25 @@ export function createPhysicsWorld() {
   const world = new RAPIER.World(gravity);
   world.timestep = FIXED_TIME_STEP;
 
-  // EventQueue pour les collisions (utilise par collisionListener.js).
-  world.__eventQueue = new RAPIER.EventQueue(true);
+  // EventQueue + bus de listeners centralises (ferme dans la closure du wrap).
+  const eventQueue = new RAPIER.EventQueue(true);
+  const collisionListeners = [];
 
-  // Wrapper de step compatible avec l'API Cannon (world.step(dt, delta, maxSubSteps))
+  // Wrap unique de step : signature Cannon-compat (dt, delta, maxSubSteps),
+  // Rapier ignore les 2 derniers. Apres step, draine l'EventQueue et notifie.
   const rawStep = world.step.bind(world);
   world.step = (_fixedTimeStep, _delta, _maxSubSteps) => {
-    rawStep(world.__eventQueue);
+    rawStep(eventQueue);
+    eventQueue.drainCollisionEvents((h1, h2, started) => {
+      if (!started) return;
+      for (const listener of collisionListeners) {
+        listener(h1, h2, world);
+      }
+    });
+  };
+
+  world.addCollisionListener = (cb) => {
+    collisionListeners.push(cb);
   };
 
   return world;

@@ -20,6 +20,9 @@ export const WALL_THICKNESS = 0.3;
 // Drain (ouverture entre les futurs flippers)
 export const DRAIN_OPENING_WIDTH = 2.5;
 
+// Bille
+export const BALL_RADIUS = 0.25;
+
 // Spawn bille (centre, juste au-dessus du drain)
 export const PLUNGER_SPAWN_X = 0;
 export const PLUNGER_SPAWN_Y = 0.26;

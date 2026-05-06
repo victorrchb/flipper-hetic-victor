@@ -1,18 +1,14 @@
 /**
  * Barrel — selection du moteur physique.
  *
- * Backend par defaut : Cannon-es (stable, MVP valide).
+ * Backend actif : Rapier (@dimforge/rapier3d-compat).
  *
- * Pour basculer sur Rapier :
- *   1. installer @dimforge/rapier3d-compat
- *   2. commenter la ligne `from "./cannon/index.js"`
- *   3. decommenter la ligne `from "./rapier/index.js"`
- *   4. main.js doit attendre `await initRapier()` avant la boucle (cf. rapier/index.js)
+ * Pour repasser sur un autre backend (ex: Cannon-es), procedure detaillee
+ * dans `rapier/MIGRATION.md` (section Rollback).
  *
  * Cf. ports/PhysicsPort.js pour le contrat d'API attendu de chaque backend.
  */
 
-export * from "./cannon/index.js";
-// export * from "./rapier/index.js";
+export * from "./rapier/index.js";
 
-export const PHYSICS_ENGINE = "cannon";
+export const PHYSICS_ENGINE = "rapier";

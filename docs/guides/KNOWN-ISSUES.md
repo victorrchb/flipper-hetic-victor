@@ -4,7 +4,7 @@ Issues connues qui ne bloquent pas la soutenance / release MVP.
 
 ## Physique
 
-- **Tunneling rare a haute vitesse** : malgre le velocity cap (25 unites/s), le solver 120 Hz et le SAPBroadphase, une bille lancee a un angle defavorable peut exceptionnellement traverser un mur fin. Mitigation : augmenter le nombre de substeps ou passer en CCD (non supporte nativement par cannon-es).
+- **Tunneling rare a haute vitesse** : malgre le velocity cap (25 unites/s) et le timestep fixe 120 Hz, une bille lancee a un angle defavorable peut exceptionnellement traverser un mur fin. Mitigation possible : activer le CCD (Continuous Collision Detection) sur la bille via `RigidBodyDesc.setCcdEnabled(true)` cote Rapier (non active par defaut pour limiter le cout CPU).
 
 - **Micro-rebonds Y** : `clampBall()` force la position Y a chaque frame, ce qui masque les rebonds verticaux mais peut provoquer un leger jitter visuel sur certains navigateurs.
 

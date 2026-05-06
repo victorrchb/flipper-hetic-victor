@@ -63,10 +63,9 @@ Librairies et details techniques :
 - `playfield/src/adapters/input.js` : adapter d'entree (clavier aujourd'hui, IoT plus tard)
 - `playfield/src/adapters/network.js` : adapter Socket
 - `playfield/src/adapters/renderer/` : Three.js (rendu 3D)
-- `playfield/src/adapters/physics/` : moteur physique (Cannon-es / Rapier via port)
+- `playfield/src/adapters/physics/` : moteur physique (Rapier via port)
   - `ports/PhysicsPort.js` : contrat du moteur
-  - `cannon/` : backend Cannon-es (default)
-  - `rapier/` : backend Rapier (scaffold pret, voir `rapier/MIGRATION.md`)
+  - `rapier/` : backend Rapier actif (`@dimforge/rapier3d-compat`, init WASM async)
   - `index.js` : barrel selectionnant le backend actif
 - `playfield/src/adapters/actuators.js` : effets sortants (haptique, sons)
 
