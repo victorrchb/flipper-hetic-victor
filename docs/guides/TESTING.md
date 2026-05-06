@@ -89,7 +89,7 @@ Tests d'integration avec Socket.IO en memoire (2 clients connectes).
 
 ## Tests playfield — `playfield/src/__tests__/collisions.test.js`
 
-Tests unitaires sur la detection drain et le debounce collision (`network.js` et `cannon-es` mockes).
+Tests unitaires sur la detection drain et le debounce collision (use case pur, sans mock physique).
 
 ### Drain
 
@@ -121,7 +121,7 @@ Tests unitaires sur la detection drain et le debounce collision (`network.js` et
 
 ## Tests playfield — `playfield/src/__tests__/ball.test.js`
 
-Tests unitaires sur le cycle de vie de la bille (`Three.js`, `cannon-es` et `physics.js` mockes).
+Tests unitaires sur le cycle de vie de la bille (`@dimforge/rapier3d-compat` et `bodyHandle.js` mockes via `init.js`).
 
 ### resetBall
 
@@ -129,7 +129,7 @@ Tests unitaires sur le cycle de vie de la bille (`Three.js`, `cannon-es` et `phy
 |---|------|------------------|
 | 1 | Position au spawn | `position.set(0, 0.26, 8.5)` |
 | 2 | Velocites a zero | velocity, angularVelocity, force, torque remis a zero |
-| 3 | Body fige en STATIC | `body.type === STATIC` |
+| 3 | Body fige en KinematicPositionBased | `setBodyType(2, true)` |
 
 ### launchBall
 

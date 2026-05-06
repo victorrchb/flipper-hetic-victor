@@ -16,6 +16,7 @@ import {
 } from "../../../domain/constants.js";
 import { getRapier } from "./init.js";
 import { createBodyHandle } from "./bodyHandle.js";
+import { MATERIALS } from "./world.js";
 
 function quatFromYaw(angle) {
   const half = angle / 2;
@@ -32,16 +33,30 @@ function createOneFlipperBody(world, side) {
   const pivotX = isLeft ? -FLIPPER_PIVOT_X : FLIPPER_PIVOT_X;
   const shapeOffsetX = isLeft ? FLIPPER_LENGTH / 2 : -FLIPPER_LENGTH / 2;
 
+  // Note Rapier : pour un kinematicVelocityBased, l'angvel applique un spin
+  // autour du **centre de masse**, pas autour du body translation. Si on
+  // laisse le collider auto-calculer le COM (densite par defaut), le COM
+  // tombe au milieu de la batte et la batte pivote sur son centre. On force
+  // donc le COM a l'origine du body (= le pivot) via setAdditionalMassProperties,
+  // et on neutralise la contribution massique du collider via setDensity(0).
   const bodyDesc = RAPIER.RigidBodyDesc.kinematicVelocityBased()
-    .setTranslation(pivotX, FLIPPER_PIVOT_Y, FLIPPER_PIVOT_Z);
+    .setTranslation(pivotX, FLIPPER_PIVOT_Y, FLIPPER_PIVOT_Z)
+    .setAdditionalMassProperties(
+      1,
+      { x: 0, y: 0, z: 0 },
+      { x: 1, y: 1, z: 1 },
+      { x: 0, y: 0, z: 0, w: 1 },
+    );
 
   const rb = world.createRigidBody(bodyDesc);
 
-  // Box collider decalee (pour rotation autour du pivot, comme Cannon addShape avec offset)
+  // Box collider decalee : extension geometrique de la batte autour du pivot.
+  // Densite 0 pour que le collider ne deplace pas le COM (cf. note ci-dessus).
   const colliderDesc = RAPIER.ColliderDesc.cuboid(FLIPPER_LENGTH / 2, FLIPPER_HEIGHT / 2, FLIPPER_WIDTH / 2)
     .setTranslation(shapeOffsetX, 0, 0)
-    .setFriction(0.3)
-    .setRestitution(0.8)
+    .setDensity(0)
+    .setFriction(MATERIALS.flipper.friction)
+    .setRestitution(MATERIALS.flipper.restitution)
     .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
   world.createCollider(colliderDesc, rb);
 

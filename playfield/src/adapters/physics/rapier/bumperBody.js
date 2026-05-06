@@ -8,9 +8,7 @@ import {
 } from "../../../domain/constants.js";
 import { getRapier } from "./init.js";
 import { createBodyHandle } from "./bodyHandle.js";
-
-const BALL_BUMPER_FRICTION = 0.1;
-const BALL_BUMPER_RESTITUTION = 0.8;
+import { MATERIALS } from "./world.js";
 
 export function createBumperBodies(world) {
   const RAPIER = getRapier();
@@ -23,8 +21,8 @@ export function createBumperBodies(world) {
 
     // Rapier `cylinder(half_height, radius)` autour de Y par defaut.
     const colliderDesc = RAPIER.ColliderDesc.cylinder(BUMPER_HEIGHT / 2, BUMPER_RADIUS)
-      .setFriction(BALL_BUMPER_FRICTION)
-      .setRestitution(BALL_BUMPER_RESTITUTION)
+      .setFriction(MATERIALS.bumper.friction)
+      .setRestitution(MATERIALS.bumper.restitution)
       .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
     world.createCollider(colliderDesc, rb);
 

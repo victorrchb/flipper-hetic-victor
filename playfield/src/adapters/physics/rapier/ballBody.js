@@ -2,6 +2,7 @@
  * Rapier — Body de la bille + launch / reset / clamp.
  */
 import {
+  BALL_RADIUS,
   PLUNGER_SPAWN_X,
   PLUNGER_SPAWN_Y,
   PLUNGER_SPAWN_Z,
@@ -9,16 +10,12 @@ import {
 } from "../../../domain/constants.js";
 import { getRapier } from "./init.js";
 import { createBodyHandle } from "./bodyHandle.js";
+import { MATERIALS } from "./world.js";
 
-export const BALL_RADIUS = 0.25;
 const BALL_MASS = 1;
-const BALL_RESTITUTION = 0.35;
-const BALL_FRICTION = 0.3;
 const BALL_LINEAR_DAMPING = 0.1;
 const BALL_FIXED_Y = BALL_RADIUS + 0.01;
 const MAX_BALL_SPEED = 25;
-
-let launched = false;
 
 export function createBallBody(world) {
   const RAPIER = getRapier();
@@ -32,13 +29,14 @@ export function createBallBody(world) {
 
   const colliderDesc = RAPIER.ColliderDesc.ball(BALL_RADIUS)
     .setDensity(BALL_MASS / ((4 / 3) * Math.PI * BALL_RADIUS ** 3))
-    .setFriction(BALL_FRICTION)
-    .setRestitution(BALL_RESTITUTION)
+    .setFriction(MATERIALS.ball.friction)
+    .setRestitution(MATERIALS.ball.restitution)
     .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
 
   world.createCollider(colliderDesc, rb);
 
-  const handle = createBodyHandle(rb, world, { userData: { type: "ball" } });
+  // `launched` est porte par le body lui-meme (pas de global module).
+  const handle = createBodyHandle(rb, world, { userData: { type: "ball", launched: false } });
   resetBallBody(handle);
   return handle;
 }
@@ -69,14 +67,24 @@ export function resetBallBody(body) {
   // Fige la bille en kinematic le temps du lancement
   body.rb.setBodyType(2 /* KinematicPositionBased */, true);
   body.rb.wakeUp();
-  launched = false;
+  body.userData.launched = false;
 }
 
 export function launchBallBody(body) {
-  if (launched) return false;
+  if (body.userData.launched) return false;
   body.rb.setBodyType(0 /* Dynamic */, true);
+  // Force le recalcul des proprietes de masse a partir du collider :
+  // sans ca, la transition Kinematic -> Dynamic peut laisser le body sans masse
+  // et `applyImpulse` ne produit aucune velocite (impulse / 0 = NaN ignore).
+  if (typeof body.rb.recomputeMassPropertiesFromColliders === "function") {
+    body.rb.recomputeMassPropertiesFromColliders();
+  }
   body.rb.wakeUp();
-  body.rb.applyImpulse({ x: 0, y: 0, z: -PLUNGER_IMPULSE_FORCE }, true);
-  launched = true;
+  // setLinvel direct (independant de la masse) plutot qu'applyImpulse :
+  // garantit que la bille part meme si le recompute ci-dessus est ignore.
+  // Avec BALL_MASS = 1, applyImpulse(F) ~ setLinvel(F), donc PLUNGER_IMPULSE_FORCE
+  // garde sa magnitude historique.
+  body.rb.setLinvel({ x: 0, y: 0, z: -PLUNGER_IMPULSE_FORCE }, true);
+  body.userData.launched = true;
   return true;
 }
