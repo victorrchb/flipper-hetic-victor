@@ -20,19 +20,20 @@ import { createFlipperMeshes } from "./adapters/renderer/flipperMesh.js";
 import { createBumperMeshes } from "./adapters/renderer/bumperMesh.js";
 import { createSlingshotMeshes } from "./adapters/renderer/slingshotMesh.js";
 
-// Physics
+// Physics — passe par le barrel pour permettre le swap de moteur (Cannon/Rapier).
+// Cf. adapters/physics/ports/PhysicsPort.js et adapters/physics/index.js.
 import {
   createPhysicsWorld,
   createStaticBoxBody,
   syncMeshesWithBodies,
   FIXED_TIME_STEP,
   MAX_SUB_STEPS,
-} from "./adapters/physics/world.js";
-import { createBallBody, launchBallBody, resetBallBody, clampBallBody } from "./adapters/physics/ballBody.js";
-import { createFlipperBodies, setFlipperActive, updateFlippers, postStepFlippers } from "./adapters/physics/flipperBody.js";
-import { createBumperBodies } from "./adapters/physics/bumperBody.js";
-import { createSlingshotBodies } from "./adapters/physics/slingshotBody.js";
-import { attachCollisionListener } from "./adapters/physics/collisionListener.js";
+  createBallBody, launchBallBody, resetBallBody, clampBallBody,
+  createFlipperBodies, setFlipperActive, updateFlippers, postStepFlippers,
+  createBumperBodies,
+  createSlingshotBodies,
+  attachCollisionListener,
+} from "./adapters/physics/index.js";
 
 // Network
 import {

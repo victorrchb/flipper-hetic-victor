@@ -1,6 +1,6 @@
 # Socket Contract MVP — Events & Payloads
 
-Source de vérité: `server/src/events.js`.
+Source de vérité: `shared/src/eventNames.js` (importé par le serveur et tous les clients).
 
 Ce document centralise les noms d'événements Socket.IO et les payloads attendus pour brancher un client (playfield, backglass, dmd) sans lire le code serveur.
 
